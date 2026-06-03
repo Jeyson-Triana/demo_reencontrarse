@@ -26,6 +26,7 @@ function formatearFecha(fecha) {
   ).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
+
 }
 
 router.get("/", async (req, res) => {
@@ -38,6 +39,7 @@ router.get("/", async (req, res) => {
 
     const ahora = new Date();
 
+    // Revisar próximos 30 días
     for (let i = 0; i < 30; i++) {
 
       const fecha = new Date();
@@ -63,6 +65,7 @@ router.get("/", async (req, res) => {
 
       for (const hora of horariosBase) {
 
+        // Si ya está ocupada
         if (horasOcupadas.includes(hora)) {
           continue;
         }
@@ -85,7 +88,9 @@ router.get("/", async (req, res) => {
 
         fechaHora.setHours(horas);
         fechaHora.setMinutes(minutos);
+        fechaHora.setSeconds(0);
 
+        // No mostrar horas ya pasadas
         if (fechaHora <= ahora) {
           continue;
         }
@@ -96,29 +101,73 @@ router.get("/", async (req, res) => {
           hora
         });
 
+        // Las primeras 3 opciones
         if (opciones.length === 3) {
-
-          return res.json({
-            ok: true,
-            opciones
-          });
-
+          break;
         }
 
       }
 
+      // Si ya tenemos 3 opciones salimos del ciclo principal
+      if (opciones.length === 3) {
+        break;
+      }
+
     }
 
+    // No encontró disponibilidad
+    if (opciones.length === 0) {
+
+      return res.json({
+
+        ok: false,
+
+        cantidad: 0,
+
+        message: "No hay disponibilidad para este servicio"
+
+      });
+
+    }
+
+    // Respuesta amigable para Infobip
     return res.json({
+
       ok: true,
-      opciones
+
+      cantidad: opciones.length,
+
+      opcion_1: opciones[0]
+        ? `${opciones[0].fecha} - ${opciones[0].hora}`
+        : "",
+
+      opcion_2: opciones[1]
+        ? `${opciones[1].fecha} - ${opciones[1].hora}`
+        : "",
+
+      opcion_3: opciones[2]
+        ? `${opciones[2].fecha} - ${opciones[2].hora}`
+        : "",
+
+      fecha_1: opciones[0]?.fecha || "",
+      hora_1: opciones[0]?.hora || "",
+
+      fecha_2: opciones[1]?.fecha || "",
+      hora_2: opciones[1]?.hora || "",
+
+      fecha_3: opciones[2]?.fecha || "",
+      hora_3: opciones[2]?.hora || ""
+
     });
 
   } catch (error) {
 
     return res.status(500).json({
+
       ok: false,
+
       error: error.message
+
     });
 
   }
