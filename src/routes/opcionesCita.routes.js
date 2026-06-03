@@ -55,7 +55,11 @@ router.get("/", async (req, res) => {
           $options: "i"
         },
 
-        fecha: fechaFormateada
+        fecha: fechaFormateada,
+
+        estado: {
+            $ne: "cancelada"
+        }
 
       });
 
