@@ -46,8 +46,15 @@ const pacienteSchema = new mongoose.Schema({
   },
 
   cobertura_medica: {
+
     tipo: String,
-    nombre_entidad: String
+    nombre_entidad: String,
+
+    tiene_orden_medica: {
+      type: Boolean,
+      default: false
+    }
+
   },
 
   estado: {
