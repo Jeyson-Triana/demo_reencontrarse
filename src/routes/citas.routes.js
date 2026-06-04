@@ -257,6 +257,32 @@ router.put("/reprogramar/:id", async (req, res) => {
 
     }
 
+  const horarioOcupado = await Cita.findOne({
+
+    "doctor.nombre_completo": cita.doctor.nombre_completo,
+
+    fecha,
+    hora,
+
+    estado: {
+      $ne: "Cancelada"
+    },
+
+    _id: {
+      $ne: id
+    }
+
+  });
+
+  if (horarioOcupado) {
+
+    return res.status(400).json({
+      ok: false,
+      message: "Horario no disponible"
+    });
+
+  }
+
     cita.fecha = fecha;
     cita.hora = hora;
     cita.estado = "Reprogramada";
