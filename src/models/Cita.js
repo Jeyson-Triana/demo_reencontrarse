@@ -32,7 +32,7 @@ const citaSchema = new mongoose.Schema({
 
   estado: {
     type: String,
-    default: "Confirmada"
+    default: "Pendiente"
   },
 
   canal: {

@@ -145,7 +145,11 @@ router.get("/proximas/:documento", async (req, res) => {
       "paciente.documento": documento,
       fecha: { $gte: fechaHoy },
       estado: {
-        $ne: "cancelada"
+        $in: [
+          "Pendiente",
+          "Confirmada",
+          "Reprogramada"
+        ]
       }
     }).sort({
       fecha: 1
@@ -233,6 +237,80 @@ router.get("/documento/:documento", async (req, res) => {
     return res.status(500).json({
       ok: false,
       error: error.message
+    });
+
+  }
+
+});
+
+// Confirmar cita
+router.put("/confirmar/:id", async (req, res) => {
+
+  try {
+
+    const { id } = req.params;
+    const cita = await Cita.findById(id);
+
+    if (!cita) {
+      return res.status(404).json({
+        ok: false,
+        message: "Cita no encontrada"
+      });
+
+    }
+
+    cita.estado = "Confirmada";
+    await cita.save();
+    return res.json({
+
+      ok: true,
+      message: "Cita confirmada exitosamente",
+      cita
+
+    });
+
+  } catch (error) {
+
+    return res.status(500).json({
+      ok: false,
+      error: error.message
+    });
+
+  }
+
+});
+
+
+// Citas pendientes para recordar
+router.get("/recordatorios", async (req, res) => {
+
+  try {
+
+    const manana = new Date();
+    manana.setDate(manana.getDate() + 1);
+
+    const fechaManana =
+      manana.toISOString().split("T")[0];
+
+    const citas = await Cita.find({
+      fecha: fechaManana,
+      estado: "Pendiente"
+
+    });
+
+    return res.json({
+      ok: true,
+      cantidad: citas.length,
+      citas
+
+    });
+
+  } catch (error) {
+
+    return res.status(500).json({
+      ok: false,
+      error: error.message
+
     });
 
   }
