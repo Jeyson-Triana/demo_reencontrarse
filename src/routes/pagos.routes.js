@@ -47,45 +47,49 @@ router.post("/generar", async (req, res) => {
 );
 
 // Endpoint para aprobar un pago (simulación)
-router.put("/aprobar/:id", async (req, res) => {
+router.get("/aprobar/:id", async (req, res) => {
 
-    try {
+  try {
 
-      const pago =
-        await Pago.findByIdAndUpdate(
+    const pago =
+      await Pago.findByIdAndUpdate(
 
-          req.params.id,
+        req.params.id,
 
-          {
-            estado: "APROBADO"
-          },
+        {
+          estado: "APROBADO"
+        },
 
-          {
-            new: true
-          }
+        {
+          new: true
+        }
 
-        );
+      );
 
-      return res.json({
+    return res.send(`
 
-        ok: true,
+      <h2>✅ Pago aprobado exitosamente</h2>
 
-        pago
+      <p>ID Pago: ${pago._id}</p>
 
-      });
+      <p>Estado: ${pago.estado}</p>
 
-    } catch (error) {
+      <p>Puedes regresar a WhatsApp para continuar tu agendamiento.</p>
 
-      return res.status(500).json({
+    `);
 
-        ok: false,
-        error: error.message
+  } catch (error) {
 
-      });
+    return res.status(500).json({
 
-    }
+      ok: false,
+      error: error.message
+
+    });
+
   }
-);
+
+});
 
 router.get("/estado/:id", async (req, res) => {
 
