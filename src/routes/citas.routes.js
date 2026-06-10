@@ -682,20 +682,26 @@ router.put("/cancelar/:id", async (req, res) => {
   try {
 
     const { id } = req.params;
+    const { motivo_cancelacion } = req.body;
+
     const cita = await Cita.findById(id);
 
     if (!cita) {
 
       return res.status(404).json({
+
         ok: false,
         message: "Cita no encontrada"
+
       });
 
     }
 
     cita.estado = "Cancelada";
+    cita.motivo_cancelacion = motivo_cancelacion || "";
 
     await cita.save();
+
     return res.json({
 
       ok: true,
@@ -712,9 +718,7 @@ router.put("/cancelar/:id", async (req, res) => {
       error: error.message
 
     });
-
   }
-
 });
 
 module.exports = router;

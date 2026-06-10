@@ -35,6 +35,11 @@ const citaSchema = new mongoose.Schema({
     default: "Pendiente"
   },
 
+  motivo_cancelacion: {
+    type: String,
+    default: ""
+  },
+
   canal: {
     type: String,
     default: "WhatsApp"
