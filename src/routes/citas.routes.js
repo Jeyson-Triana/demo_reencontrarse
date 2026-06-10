@@ -1,4 +1,5 @@
 const express = require("express");
+const axios = require("axios");
 
 const router = express.Router();
 
@@ -15,7 +16,9 @@ router.post("/", async (req, res) => {
       especialidad,
       fecha,
       hora,
-      modalidad
+      modalidad,
+      orden_medica,
+      estado_pago
     } = req.body;
 
     // Buscar paciente
@@ -85,7 +88,9 @@ router.post("/", async (req, res) => {
 
       fecha,
       hora,
-      modalidad
+      modalidad,
+      orden_medica: orden_medica || "",
+      estado_pago: estado_pago || "NO_APLICA"
 
     });
 
@@ -281,33 +286,316 @@ router.put("/confirmar/:id", async (req, res) => {
 });
 
 
-// Citas pendientes para recordar
+// Citas pendientes para recordar mañana
 router.get("/recordatorios", async (req, res) => {
 
   try {
 
     const manana = new Date();
-    manana.setDate(manana.getDate() + 1);
+
+    manana.setDate(
+      manana.getDate() + 1
+    );
 
     const fechaManana =
       manana.toISOString().split("T")[0];
 
     const citas = await Cita.find({
+
       fecha: fechaManana,
-      estado: "Pendiente"
+
+      estado: {
+        $in: [
+          "Pendiente",
+          "Reprogramada"
+        ]
+      }
 
     });
 
+    const resultado = [];
+
+    for (const cita of citas) {
+
+      const paciente =
+        await Paciente.findOne({
+
+          numero_documento:
+            cita.paciente.documento
+
+        });
+
+      resultado.push({
+
+        id_cita: cita._id,
+        nombre_paciente: cita.paciente.nombre_completo,
+        telefono: paciente?.telefono || "",
+        servicio: cita.doctor.especialidad,
+        profesional: cita.doctor.nombre_completo,
+        fecha: cita.fecha,
+        hora: cita.hora,
+        estado: cita.estado
+
+      });
+
+    }
+
     return res.json({
+
       ok: true,
-      cantidad: citas.length,
-      citas
+      cantidad: resultado.length,
+      citas: resultado
 
     });
 
   } catch (error) {
 
     return res.status(500).json({
+
+      ok: false,
+      error: error.message
+
+    });
+  }
+});
+
+// Enviar recordatorios de citas
+router.post("/enviar-recordatorios", async (req, res) => {
+
+  try {
+
+    const manana = new Date();
+
+    manana.setDate(
+      manana.getDate() + 1
+    );
+
+    const fechaManana =
+      manana.toISOString().split("T")[0];
+
+    const citas = await Cita.find({
+
+      fecha: fechaManana,
+
+      estado: {
+        $in: [
+          "Pendiente",
+          "Reprogramada"
+        ]
+      }
+
+    });
+
+    const resultado = [];
+
+    for (const cita of citas) {
+
+      try {
+
+        const paciente =
+          await Paciente.findOne({
+
+            numero_documento:
+              cita.paciente.documento
+
+          });
+
+        const recordatorio = {
+
+          id_cita: cita._id,
+          nombre: cita.paciente.nombre_completo,
+          telefono: paciente?.telefono || "",
+          servicio: cita.doctor.especialidad,
+          profesional: cita.doctor.nombre_completo,
+          fecha: cita.fecha,
+          hora: cita.hora
+
+        };
+
+        if (!recordatorio.telefono) {
+
+          console.warn(
+            `⚠️ No se encontró teléfono para ${recordatorio.nombre}`
+          );
+
+          continue;
+
+        }
+
+        console.log(
+          `📲 Enviando recordatorio a ${recordatorio.nombre} (${recordatorio.telefono})`
+        );
+
+        console.log(
+          JSON.stringify(
+            {
+              messages: [
+                {
+                  from: process.env.INFOBIP_SENDER,
+                  to: recordatorio.telefono,
+                  content: {
+                    templateName: "recordatorio_cita",
+                    templateData: {
+                      body: {
+                        placeholders: [
+                          recordatorio.nombre,
+                          "Reencontrarse",
+                          recordatorio.servicio,
+                          recordatorio.profesional,
+                          recordatorio.fecha,
+                          recordatorio.hora
+                        ]
+                      },
+                      buttons: [
+                        {
+                          type: "QUICK_REPLY",
+                          parameter: "CONFIRMAR"
+                        },
+                        {
+                          type: "QUICK_REPLY",
+                          parameter: "REPROGRAMAR"
+                        },
+                        {
+                          type: "QUICK_REPLY",
+                          parameter: "CANCELAR"
+                        }
+                      ]
+                    },
+                    language: "es_CO"
+                  }
+                }
+              ]
+            },
+            null,
+            2
+          )
+        );
+
+        const response = await axios.post(
+
+          `${process.env.INFOBIP_BASE_URL}/whatsapp/1/message/template`,
+
+          {
+            messages: [
+              {
+                from: process.env.INFOBIP_SENDER,
+                to: recordatorio.telefono,
+                
+                content: {
+
+                  templateName: "recordatorio_cita",
+
+                  templateData: {
+
+                    body: {
+
+                      placeholders: [
+
+                        recordatorio.nombre,
+                        "Reencontrarse",
+                        recordatorio.servicio,
+                        recordatorio.profesional,
+                        recordatorio.fecha,
+                        recordatorio.hora
+
+                      ]
+
+                    },
+
+                    buttons: [
+
+                      {
+                        type: "QUICK_REPLY",
+                        parameter: "CONFIRMAR"
+                      },
+
+                      {
+                        type: "QUICK_REPLY",
+                        parameter: "REPROGRAMAR"
+                      },
+
+                      {
+                        type: "QUICK_REPLY",
+                        parameter: "CANCELAR"
+                      }
+
+                    ]
+
+                  },
+
+                  language: "es_CO"
+
+                }
+
+              }
+            ]
+          },
+
+          {
+            headers: {
+
+              Authorization:
+                `App ${process.env.INFOBIP_API_KEY}`,
+
+              "Content-Type":
+                "application/json"
+
+            }
+
+          }
+
+        );
+
+        console.log(
+          `✅ Recordatorio enviado a ${recordatorio.nombre}`
+        );
+
+        console.log(
+          response.data
+        );
+
+        resultado.push(
+          recordatorio
+        );
+
+      } catch (error) {
+
+        console.error(
+          `❌ Error enviando a ${cita.paciente.nombre_completo}`
+        );
+
+        console.error(
+          "STATUS:",
+          error.response?.status
+        );
+
+        console.error(
+          "DATA:",
+          JSON.stringify(
+            error.response?.data,
+            null,
+            2
+          )
+        );
+
+      }
+
+    }
+
+    return res.json({
+
+      ok: true,
+      enviados: resultado.length,
+      recordatorios: resultado
+
+    });
+
+  } catch (error) {
+
+    console.error(error);
+
+    return res.status(500).json({
+
       ok: false,
       error: error.message
 

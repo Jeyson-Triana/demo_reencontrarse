@@ -38,10 +38,24 @@ const citaSchema = new mongoose.Schema({
   canal: {
     type: String,
     default: "WhatsApp"
+  },
+
+  orden_medica: {
+    type: String,
+    default: ""
+  },
+
+  estado_pago: {
+    type: String,
+    default: "NO_APLICA"
   }
 
 }, {
   timestamps: true
 });
 
-module.exports = mongoose.model("Cita", citaSchema, "citas");
+module.exports = mongoose.model(
+  "Cita",
+  citaSchema,
+  "citas"
+);

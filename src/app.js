@@ -6,6 +6,7 @@ const citasRoutes = require("./routes/citas.routes");
 const disponibilidadRoutes = require("./routes/disponibilidad.routes");
 const proximaDisponibilidadRoutes = require("./routes/proximaDisponibilidad.routes");
 const opcionesCitaRoutes = require("./routes/opcionesCita.routes");
+const pagosRoutes = require("./routes/pagos.routes");
 
 const app = express();
 
@@ -21,5 +22,6 @@ app.use("/api/citas", citasRoutes);
 app.use("/api/disponibilidad", disponibilidadRoutes);
 app.use("/api/proxima-disponibilidad", proximaDisponibilidadRoutes);
 app.use("/api/opciones-cita", opcionesCitaRoutes);
+app.use("/api/pagos", pagosRoutes);
 
 module.exports = app;

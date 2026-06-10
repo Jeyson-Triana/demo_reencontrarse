@@ -57,6 +57,11 @@ const pacienteSchema = new mongoose.Schema({
 
   },
 
+  estado_pago: {
+    type: String,
+    default: "NO_APLICA"
+  },
+  
   estado: {
     type: Boolean,
     default: true
