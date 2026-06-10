@@ -30,7 +30,7 @@ router.post("/generar", async (req, res) => {
         ok: true,
         id_pago: pago._id,
         estado: pago.estado,
-        link_pago: `https://api-reencontrarse.onrender.com/api/aprobar/${pago._id}`
+        link_pago: `https://api-reencontrarse.onrender.com/api/pagos/aprobar/${pago._id}`
 
       });
 
